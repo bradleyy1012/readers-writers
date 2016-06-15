@@ -1,0 +1,97 @@
+BACI System: C-- to PCODE Compiler in Java, 09:45  05 Nov 2007
+Source File:  /Users/bradleykovacs/Desktop/readers-writers-problem/readers-writers-problem.cm  Wed Jun 15 15:45:03 2016
+ line  pc
+   1   0  // File: ${Readers-Writers-problem}
+   2   0  // Author: ${Bradley Kovacs}
+   3   0  // Date: ${6/14/16}
+   4   0  
+   5   0  const int MIN_TIMES_READER_ACCESS = 6;  // minimum times each reader must access the resource
+   6   0  const int MIN_TIMES_WRITER_ACCESS = 3;  // minimum times each writer must access the resource
+   7   0  
+   8   0  monitor readerWriterMonitor {
+   9   0      
+  10   0      int sharedResource, busy, readerCount;
+  11   0      condition canWrite, canRead;
+  12   0  
+  13   0      void beginRead(int id)
+  14   1      {
+  15   1          if (busy == 1) {
+  16   5              waitc(canRead, readerCount);
+  17   8          }
+  18   8      
+  19   8          ++readerCount;
+  20  13  
+  21  13          // Signal other readers that they can read
+  22  13          signalc(canRead);
+  23  15          cout << "Reader " << id << " enters the critical section" << endl;
+  24  20      }
+  25  20  
+  26  20      void endRead(int id)
+  27  23      {
+  28  23          cout << "Reader " << id << " leaves the critical section" << endl;
+  29  28          // If no one is reading
+  30  28          if (--readerCount == 0) {
+  31  37              signalc(canWrite);
+  32  39          }
+  33  39          
+  34  39      }
+  35  39  
+  36  39      void beginWrite(int id)
+  37  42      {
+  38  42          if (busy == 1 || readerCount != 0) {
+  39  50              waitc(canWrite, 10 + readerCount);
+  40  55          }
+  41  55          busy = 1;
+  42  58          cout << "Writer " << id << " enters the critical section" << endl;
+  43  63      }
+  44  63  
+  45  63      void endWrite(int id)
+  46  66      {
+  47  66          cout << "Writer " << id << " leaves the critical section" << endl;
+  48  71          busy = 0;
+  49  74          
+  50  74          if (empty(canRead) == 0) {
+  51  79              signalc(canRead);
+  52  81          }
+  53  81          else {
+  54  82              signalc(canWrite);
+  55  84          }
+  56  84      }
+  57  84  
+  58  84      init
+  59  86      {
+  60  86          // Initial setup
+  61  86          readerCount = 0;
+  62  89          busy = 0;
+  63  92      }
+  64  92  }
+  65  93  
+  66  93  void reader(int id)
+  67  93  {
+  68  93      int i = 0;
+  69  96      while (i++ <= MIN_TIMES_READER_ACCESS) {
+  70 105          beginRead(id);
+  71 109          endRead(id);
+  72 113      }
+  73 113  }
+  74 114  
+  75 114  void writer(int id)
+  76 115  {
+  77 115      int i = 0;
+  78 118      while (i++ <= MIN_TIMES_WRITER_ACCESS) {
+  79 127          beginWrite(id);
+  80 131          endWrite(id);
+  81 135      }
+  82 135  }
+  83 136  
+  84 136  
+  85 136  
+  86 136  void main() {
+  87 138  
+  88 138      cobegin {
+  89 139          // Assignment states to have 6 readers and 4 writers
+  90 139          reader(1); reader(2); reader(3); reader(4); reader(5); reader(6);
+  91 163          writer(1); writer(2); writer(3); writer(4);
+  92 179      }
+  93 179      
+  94 179  }

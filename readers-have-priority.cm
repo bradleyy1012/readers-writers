@@ -1,0 +1,94 @@
+// File: ${Readers-Writers-problem}
+// Author: ${Bradley Kovacs}
+// Date: ${6/14/16}
+
+const int MIN_TIMES_READER_ACCESS = 6;  // minimum times each reader must access the resource
+const int MIN_TIMES_WRITER_ACCESS = 3;  // minimum times each writer must access the resource
+
+monitor readerWriterMonitor {
+    
+    int sharedResource, busy, readerCount;
+    condition canWrite, canRead;
+
+    void beginRead(int id)
+    {
+        if (busy == 1) {
+            waitc(canRead, readerCount);
+        }
+    
+        ++readerCount;
+
+        // Signal other readers that they can read
+        signalc(canRead);
+        cout << "Reader " << id << " enters the critical section" << endl;
+    }
+
+    void endRead(int id)
+    {
+        cout << "Reader " << id << " leaves the critical section" << endl;
+        // If no one is reading
+        if (--readerCount == 0) {
+            signalc(canWrite);
+        }
+        
+    }
+
+    void beginWrite(int id)
+    {
+        if (busy == 1 || readerCount != 0) {
+            waitc(canWrite, 10 + readerCount);
+        }
+        busy = 1;
+        cout << "Writer " << id << " enters the critical section" << endl;
+    }
+
+    void endWrite(int id)
+    {
+        cout << "Writer " << id << " leaves the critical section" << endl;
+        busy = 0;
+        
+        if (empty(canRead) == 0) {
+            signalc(canRead);
+        }
+        else {
+            signalc(canWrite);
+        }
+    }
+
+    init
+    {
+        // Initial setup
+        readerCount = 0;
+        busy = 0;
+    }
+}
+
+void reader(int id)
+{
+    int i = 0;
+    while (i++ <= MIN_TIMES_READER_ACCESS) {
+        beginRead(id);
+        endRead(id);
+    }
+}
+
+void writer(int id)
+{
+    int i = 0;
+    while (i++ <= MIN_TIMES_WRITER_ACCESS) {
+        beginWrite(id);
+        endWrite(id);
+    }
+}
+
+
+
+void main() {
+
+    cobegin {
+        // Assignment states to have 6 readers and 4 writers
+        reader(1); reader(2); reader(3); reader(4); reader(5); reader(6);
+        writer(1); writer(2); writer(3); writer(4);
+    }
+    
+}
